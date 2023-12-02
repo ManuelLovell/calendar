@@ -1,0 +1,15 @@
+{
+    "name": "Calendar!",
+    "description": "A calendar.",
+    "version": "1.0",
+    "author": "Battle-System",
+    "icon": "/logo.png",
+    "manifest_version": 1,
+    "action": {
+      "title": "Calendar!",
+      "icon": "/logo.svg",
+      "popover": "/",
+      "height": 900,
+      "width": 700
+    }
+  }
