@@ -1,6 +1,6 @@
 {
     "name": "Calendar!",
-    "description": "A calendar.",
+    "description": "A customizable calendar for your campaign room.",
     "version": "1.0",
     "author": "Battle-System",
     "icon": "/logo.png",
@@ -9,7 +9,7 @@
       "title": "Calendar!",
       "icon": "/logo.svg",
       "popover": "/",
-      "height": 900,
-      "width": 700
+      "height": 560,
+      "width": 550
     }
   }
