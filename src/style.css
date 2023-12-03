@@ -72,7 +72,7 @@ h2 {
 table {
     border-collapse: collapse;
     width: 100%;
-    margin-top: 20px; 
+    margin-top: 20px;
     border-radius: 16px;
     overflow: hidden;
 }
@@ -112,6 +112,11 @@ td {
     width: 24px;
     height: 24px;
     filter: var(--invert);
+}
+
+.clickable:active {
+    filter: var(--invert-click);
+    transform: scale(1.5);
 }
 
 .month-header-cell {
@@ -271,31 +276,34 @@ input[type=number] {
     height: 12px;
     margin-left: 6px;
 }
+
 /* Scroll Bars */
 ::-webkit-scrollbar {
     width: 10px;
-  }
-  
-  /* Track */
-  ::-webkit-scrollbar-track {
+}
+
+/* Track */
+::-webkit-scrollbar-track {
     background-color: var(--OBR-dark-blue);
-  }
-   
-  /* Handle */
-  ::-webkit-scrollbar-thumb {
-    background: var(--OBR-Purple-Select); 
-  }
-  
-  /* Handle on hover */
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--OBR-Day-Select); 
-  }
-  .bottom-border {
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: var(--OBR-Purple-Select);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--OBR-Day-Select);
+}
+
+.bottom-border {
     width: 10px;
     background-color: var(--OBR-dark-blue);
     position: fixed;
-    top:0;
+    top: 0;
     left: 0;
     height: 100%;
-    z-index: 9999; /* Adjust the z-index as needed */
+    z-index: 9999;
+    /* Adjust the z-index as needed */
 }

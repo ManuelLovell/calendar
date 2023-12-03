@@ -23,3 +23,9 @@ interface Moon
     Cycle: string;
     Shift: string;
 }
+
+interface OutsideInput
+{
+    Increment: number;
+    Timestamp: string;
+}

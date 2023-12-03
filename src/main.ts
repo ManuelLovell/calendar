@@ -73,6 +73,9 @@ const calendarSelectButton = document.getElementById('calendarButton') as HTMLBu
 const generateCalendarButton = document.getElementById('generateCalendar') as HTMLButtonElement;
 const headlineArea = document.getElementById('titleName') as HTMLElement;
 
+let viewingMonth = 1;
+let shownMonth = 1;
+
 const spellContainer = document.getElementById('spellLevelContainer') as HTMLDivElement;
 const spellLabel = document.createElement('div');
 let spellDCValue: number = 0;
@@ -179,6 +182,21 @@ OBR.onReady(async () =>
         return;
     }
 
+    /// Outside Inputs
+    OBR.room.onMetadataChange(async (metadata) =>
+    {
+        const outside = metadata[`${Constants.OUTSIDEID}/data`] as OutsideInput;
+        if (outside)
+        {
+            if (!Utilities.IsThisOld(outside.Timestamp, "Outside", "CALENDAR"))
+            {
+                currentDayInput.value = ((+currentDayInput.value) + (+outside.Increment)).toString();
+                await setCurrentDate();
+            }
+        }
+    });
+
+    ///
     const buttons = document.querySelectorAll('#floating-header button');
     const contents = document.querySelectorAll<HTMLDivElement>('.content');
 
@@ -319,6 +337,7 @@ OBR.onReady(async () =>
         const dayBackButton = document.createElement('button');
         dayBackButton.title = "Select Previous Day";
         dayBackButton.classList.add("day-back-button");
+        dayBackButton.classList.add("clickable");
         dayBackButton.style.background = "url(./back-day.svg) no-repeat center center";
         dayBackButton.style.backgroundSize = 'contain';
         dayBackButton.onclick = async () =>
@@ -329,6 +348,7 @@ OBR.onReady(async () =>
         const dayForwardButton = document.createElement('button');
         dayForwardButton.title = "Select Next Day";
         dayForwardButton.classList.add("day-forward-button");
+        dayForwardButton.classList.add("clickable");
         dayForwardButton.style.background = "url(./forward-day.svg) no-repeat center center";
         dayForwardButton.style.backgroundSize = 'contain';
         dayForwardButton.onclick = async () =>
@@ -351,31 +371,33 @@ OBR.onReady(async () =>
             const monthBackButton = document.createElement('button');
             monthBackButton.title = "View previous Month";
             monthBackButton.classList.add("mon-back-button");
+            monthBackButton.classList.add("clickable");
             monthBackButton.style.background = "url(./back-month.svg) no-repeat center center";
             monthBackButton.style.backgroundSize = 'contain';
             monthBackButton.onclick = () =>
             {
-                let newValue = (+currentMonthInput.value - 1);
+                let newValue = (viewingMonth - 1);
                 if (newValue < 1)
                 {
                     newValue = (+numMonthsInput.value);
                 }
-                currentMonthInput.value = newValue.toString();
+                viewingMonth = newValue;
                 changeVisibleMonth();
             };
             const monthForwardButton = document.createElement('button');
             monthForwardButton.title = "View next Month";
             monthForwardButton.classList.add("mon-forward-button");
+            monthForwardButton.classList.add("clickable");
             monthForwardButton.style.background = "url(./forward-month.svg) no-repeat center center";
             monthForwardButton.style.backgroundSize = 'contain';
-            monthForwardButton.onclick = () =>
+            monthForwardButton.onclick = async () =>
             {
-                let newValue = (+currentMonthInput.value + 1);
+                let newValue = (viewingMonth + 1);
                 if (newValue > (+numMonthsInput.value))
                 {
                     newValue = 1;
                 }
-                currentMonthInput.value = newValue.toString();
+                viewingMonth = newValue;
                 changeVisibleMonth();
             };
 
@@ -456,7 +478,7 @@ OBR.onReady(async () =>
         // Display the generated calendar container
         calendarOutputContainer.innerHTML = '';
         calendarOutputContainer.appendChild(calendarContainer);
-
+        viewingMonth = (+currentMonthInput.value);
         await setCurrentDate();
     }
 
@@ -508,27 +530,47 @@ OBR.onReady(async () =>
         return saveData;
     }
 
-    function changeVisibleMonth()
+    function changeVisibleMonth(showTrueDate = false)
     {
         // Find all elements with the class 'calendar-system'
         const calendarElements = document.querySelectorAll<HTMLTableElement>('.calendar-system');
 
+        let monthValue = viewingMonth !== (+currentMonthInput.value) ? viewingMonth : (+currentMonthInput.value);
+
+        if (showTrueDate) monthValue = (+currentMonthInput.value);
+        let forward = shownMonth < monthValue;
+
         // Loop through each element
         for (const calendarElement of calendarElements)
         {
-            const monthValue = (+currentMonthInput.value) - 1;
             // Check if the element has the id 'testers1'
-            if (calendarElement.id === `monthTable${monthValue}`)
+            if (calendarElement.id === `monthTable${monthValue - 1}`)
             {
-                // Display the element with id 'testers1'
-                calendarElement.style.display = 'table';
+                // Display the element with id 'testers1' with a slide-in effect from the right
+                setTimeout(() =>
+                {
+                    shownMonth = monthValue;
+                    calendarElement.style.display = 'table';
+                    calendarElement.style.transform = forward ? 'translateX(100%)' : 'translateX(-100%)';
+                    calendarElement.offsetHeight; // Trigger reflow to ensure transition is applied
+                    calendarElement.style.transform = 'translateX(0%)';
+                    calendarElement.style.transition = 'transform 0.2s ease-in-out';
+                }, 200); // Adjust the delay to match your transition duration (in milliseconds)
             } else
             {
-                // Hide other elements with class 'calendar-system'
-                calendarElement.style.display = 'none';
+                // Hide other elements with class 'calendar-system' with a slide-out effect to the left
+                calendarElement.style.transform = forward ? 'translateX(-100%)' : 'translateX(100%)';
+                calendarElement.style.transition = 'transform 0.2s ease-in-out';
+                // Use a setTimeout to set display to 'none' after the transition completes
+                setTimeout(() =>
+                {
+                    calendarElement.style.display = 'none';
+                }, 200); // Adjust the delay to match your transition duration (in milliseconds)
             }
         }
     }
+
+
 
     async function setCurrentDate()
     {
@@ -577,7 +619,7 @@ OBR.onReady(async () =>
         {
             currentDateCell.classList.add('current-date');
         }
-        changeVisibleMonth();
+        changeVisibleMonth(true);
 
         // Get moon data
         const moons = [];

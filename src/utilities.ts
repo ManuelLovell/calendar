@@ -1,5 +1,7 @@
 import { Theme } from "@owlbear-rodeo/sdk";
 
+let messageCounter: { [key: string]: string } = {};
+
 export function GetGUID(): string
 {
     let d = new Date().getTime();
@@ -59,16 +61,49 @@ export function FindUniqueIds(array1: string[], array2: string[]): string[]
     return uniqueIds;
 }
 
-export function IsThisOld(created: string): boolean
+export function IsThisOld(timeStamp: string, processId: string, category = "CALENDAR"): boolean
 {
-    const TWO_SECONDS = 2 * 1000; // Mins - seconds - milliseconds
+    const processCategory = `${processId}_${category}}`;
+    const logKey = messageCounter[processCategory];
+    if (logKey)
+    {
+        if (logKey !== timeStamp)
+        {
+            // If it's older than a minute, we assume stale data.
+            // If the app was reloaded we no longer have our list.
+            const inputDate = new Date(timeStamp);
+            const currentDate = new Date();
+            const timeDifference = currentDate.getTime() - inputDate.getTime();
+            const oneMinuteInMilliseconds = 60 * 1000;
 
-    const currentTime: any = new Date();
-    const messageTime: any = new Date(created);
-    //Don't repeat messages older than 5 seconds (on refresh/reloads/dayslater)..
-    const pastDue = (currentTime - messageTime) > TWO_SECONDS;
+            // In this case, this should only be coming from the same PC - so the time should be pretty accurate.
+            if (timeDifference >= oneMinuteInMilliseconds)
+            {
+                return true;
+            }
+            messageCounter[processCategory] = timeStamp;
+            return false;
+        }
+        else
+            return true;
+    }
+    else
+    {
+        // If it's older than a minute, we assume stale data.
+        // If the app was reloaded we no longer have our list.
+        const inputDate = new Date(timeStamp);
+        const currentDate = new Date();
+        const timeDifference = currentDate.getTime() - inputDate.getTime();
+        const oneMinuteInMilliseconds = 60 * 1000;
 
-    return pastDue;
+        // In this case, this should only be coming from the same PC - so the time should be pretty accurate.
+        if (timeDifference >= oneMinuteInMilliseconds)
+        {
+            return true;
+        }
+        messageCounter[processCategory] = timeStamp;
+        return false;
+    }
 }
 
 export function HexToRgba(hex: string, alpha: number): string
