@@ -173,10 +173,11 @@ td {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 989;
     background-color: var(--OBR-dark-blue);
     padding-top: 6px;
     padding-bottom: 6px;
+    padding-left: 10px;
     display: flex;
     justify-content: space-around;
     align-items: center;
