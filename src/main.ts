@@ -39,8 +39,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <input type="number" class="input-mini" id="daysPerWeek" name="daysPerWeek" min="1" value="7">
     <div id="dayNameInputContainer"></div>
         
-    <label for="totalDaysInYear">Total Days in Year:</label>
-    <input type="number" class="input-mini" id="totalDaysInYear" name="totalDaysInYear" min="1" value="365">
+    <input type="number" style="display: none;" class="input-mini" id="totalDaysInYear" name="totalDaysInYear" min="1" value="365">
 </div>
 
 <div id="moons" class="content" style="display:none;">
@@ -56,6 +55,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </br>
     <button id="importDonJon">Import DonJon Calendar</button>
 </div>
+<div class="bottom-border"></div>
 `;
 
 // calendar Inputs
@@ -161,19 +161,19 @@ OBR.onReady(async () =>
 
     if (oldSave)
     {
-        importCalendarData(oldSave);
+        await importCalendarData(oldSave);
     }
 
     if (userRole === "PLAYER")
     {
         document.getElementById("floating-header")!.style.display = "none";
         document.getElementById("calendar")!.style.marginTop = "0";
-        OBR.room.onMetadataChange((metadata) =>
+        OBR.room.onMetadataChange(async (metadata) =>
         {
             const saveData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
             if (saveData)
             {
-                importCalendarData(saveData);
+                await importCalendarData(saveData);
             }
         });
         return;
@@ -216,12 +216,12 @@ OBR.onReady(async () =>
         });
     });
 
-    currentMonthInput.onchange = () => setCurrentDate();
-    currentDayInput.onchange = () => setCurrentDate();
+    currentMonthInput.onchange = async () => await setCurrentDate();
+    currentDayInput.onchange = async () => await setCurrentDate();
 
     // Setup Onclicks
-    generateButton.onclick = () => generateCalendar();
-    donJonButton.onclick = () => importCalendarData();
+    generateButton.onclick = async () => await generateCalendar();
+    donJonButton.onclick = async () => await importCalendarData();
 
     // Setup Onchange Handlers
     daysPerWeekInput.onchange = () => updateDayInputs();
@@ -317,24 +317,24 @@ OBR.onReady(async () =>
 
         // Create Day Toggles
         const dayBackButton = document.createElement('button');
-        dayBackButton.title = "DayBack";
+        dayBackButton.title = "Select Previous Day";
         dayBackButton.classList.add("day-back-button");
         dayBackButton.style.background = "url(./back-day.svg) no-repeat center center";
         dayBackButton.style.backgroundSize = 'contain';
-        dayBackButton.onclick = () =>
+        dayBackButton.onclick = async () =>
         {
             currentDayInput.value = (+currentDayInput.value - 1).toString();
-            setCurrentDate();
+            await setCurrentDate();
         };
         const dayForwardButton = document.createElement('button');
-        dayForwardButton.title = "DayForward";
+        dayForwardButton.title = "Select Next Day";
         dayForwardButton.classList.add("day-forward-button");
         dayForwardButton.style.background = "url(./forward-day.svg) no-repeat center center";
         dayForwardButton.style.backgroundSize = 'contain';
-        dayForwardButton.onclick = () =>
+        dayForwardButton.onclick = async () =>
         {
             currentDayInput.value = (+currentDayInput.value + 1).toString();
-            setCurrentDate();
+            await setCurrentDate();
         };
 
         // Add calendar name as the caption
@@ -344,26 +344,38 @@ OBR.onReady(async () =>
         if (userRole === "GM") headlineArea.appendChild(dayForwardButton);
 
         // Create a table for each month
+        let lastWeekday = 1; // Initialize with the first weekday
+        let newMonth = true; // New month to space the beginning days
         for (let monthIndex = 0; monthIndex < (+numMonthsInput.value); monthIndex++)
         {
             const monthBackButton = document.createElement('button');
-            monthBackButton.title = "MonBack";
+            monthBackButton.title = "View previous Month";
             monthBackButton.classList.add("mon-back-button");
             monthBackButton.style.background = "url(./back-month.svg) no-repeat center center";
             monthBackButton.style.backgroundSize = 'contain';
             monthBackButton.onclick = () =>
             {
-                currentMonthInput.value = (Math.max(+currentMonthInput.value - 1, 1)).toString();
+                let newValue = (+currentMonthInput.value - 1);
+                if (newValue < 1)
+                {
+                    newValue = (+numMonthsInput.value);
+                }
+                currentMonthInput.value = newValue.toString();
                 changeVisibleMonth();
             };
             const monthForwardButton = document.createElement('button');
-            monthForwardButton.title = "MonForward";
+            monthForwardButton.title = "View next Month";
             monthForwardButton.classList.add("mon-forward-button");
             monthForwardButton.style.background = "url(./forward-month.svg) no-repeat center center";
             monthForwardButton.style.backgroundSize = 'contain';
             monthForwardButton.onclick = () =>
             {
-                currentMonthInput.value = (Math.max(+currentMonthInput.value + 1, 1)).toString();
+                let newValue = (+currentMonthInput.value + 1);
+                if (newValue > (+numMonthsInput.value))
+                {
+                    newValue = 1;
+                }
+                currentMonthInput.value = newValue.toString();
                 changeVisibleMonth();
             };
 
@@ -395,15 +407,29 @@ OBR.onReady(async () =>
             }
 
             // Add day cells with moon phases
-            let currentWeekday = 1;
+            let currentWeekday = lastWeekday;
             for (let day = 1; day <= (+monthDays[monthIndex]); day++)
             {
-                if (currentWeekday === 1)
+                if (newMonth)
                 {
                     // Start a new row for the first day of the week
                     monthTable.insertRow();
-                }
+                    const firstDaysRow = monthTable.rows[monthTable.rows.length - 1];
 
+                    for (let index = 1; index < currentWeekday; index++)
+                    {
+                        firstDaysRow.insertCell();
+                    }
+                    newMonth = false; // Set newmonth false so it doesnt add the starting row.
+                }
+                else
+                {
+                    if (currentWeekday === 1)
+                    {
+                        // Start a new row for the first day of the week
+                        monthTable.insertRow();
+                    }
+                }
                 const dayRow = monthTable.rows[monthTable.rows.length - 1];
                 const dayCell = dayRow.insertCell();
                 dayCell.textContent = `${day}`;
@@ -420,7 +446,9 @@ OBR.onReady(async () =>
                     currentWeekday = 1;
                 }
             }
-
+            // Update the lastWeekday for the next month
+            lastWeekday = currentWeekday;
+            newMonth = true;
             // Add the month table to the calendar container
             calendarContainer.appendChild(monthTable);
         }
@@ -686,7 +714,7 @@ OBR.onReady(async () =>
     }
 
     // Don Jon Importer
-    function importCalendarData(saveFile?: SaveFile)
+    async function importCalendarData(saveFile?: SaveFile)
     {
         const donjonJson = (document.getElementById('donjonJson') as HTMLTextAreaElement).value;
         let donjonData;
@@ -742,7 +770,12 @@ OBR.onReady(async () =>
             // Set the total days in the year
             (document.getElementById('totalDaysInYear') as HTMLInputElement).value = donjonData.year_len ? donjonData.year_len : "336";
 
-            generateCalendar();
+            await generateCalendar();
+            if (!saveFile)
+            {
+                calendarSelectButton.click();
+                await OBR.notification.show("Calendar Imported Successfully!", "SUCCESS");
+            }
         } catch (error)
         {
             alert('Invalid Calendar Format.');
