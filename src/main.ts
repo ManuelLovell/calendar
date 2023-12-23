@@ -167,10 +167,12 @@ OBR.onReady(async () =>
         await importCalendarData(oldSave);
     }
 
+    if (userRole === "GM") document.getElementById("calendar")!.style.height = "94%";
     if (userRole === "PLAYER")
     {
         document.getElementById("floating-header")!.style.display = "none";
         document.getElementById("calendar")!.style.marginTop = "0";
+        document.getElementById("titleLine")!.style.marginTop = "2px";
         OBR.room.onMetadataChange(async (metadata) =>
         {
             const saveData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
@@ -570,8 +572,6 @@ OBR.onReady(async () =>
         }
     }
 
-
-
     async function setCurrentDate()
     {
         const daysInMonthMax = GetSpecialValue("month", +currentMonthInput.value, "Days");
@@ -647,6 +647,8 @@ OBR.onReady(async () =>
         {
             const saveData = CreateSaveFile();
             await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/saveData`]: saveData });
+            const monthName = saveData?.MonthSet[+saveData.CurrentMonth - 1]?.Name;
+            await OBR.action.setBadgeText(`${monthName ?? saveData?.CurrentMonth}:${saveData?.CurrentDay}`);
         }
     }
 
@@ -813,6 +815,9 @@ OBR.onReady(async () =>
             (document.getElementById('totalDaysInYear') as HTMLInputElement).value = donjonData.year_len ? donjonData.year_len : "336";
 
             await generateCalendar();
+            const monthName = saveFile?.MonthSet[+saveFile.CurrentMonth - 1]?.Name;
+            await OBR.action.setBadgeText(`${monthName ?? saveFile?.CurrentMonth}:${saveFile?.CurrentDay}`);
+
             if (!saveFile)
             {
                 calendarSelectButton.click();
