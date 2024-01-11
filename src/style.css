@@ -309,3 +309,71 @@ input[type=number] {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--OBR-Day-Select);
 }
+
+@keyframes battle-system-glow {
+    0% {
+        box-shadow: 0 0 2px 0px red;
+    }
+
+    50% {
+        box-shadow: 0 0 8px 4px red;
+    }
+
+    100% {
+        box-shadow: 0 0 2px 0px red;
+    }
+}
+
+@keyframes shine {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+.whats-new-shine {
+    animation: battle-system-glow 1.5s infinite;
+    border-radius: 50%;
+}
+
+/* Tool tips*/
+.information {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.information:hover::after {
+    content: attr(data-information);
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-75%);
+    padding: 5px;
+    background-color: var(--OBR-offset-background);
+    color: var(--OBR-font);
+    border: 2px solid grey;
+    border-radius: 4px;
+    white-space: pre-line;
+    z-index: 1;
+}
+
+.imageIcon {
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
+}
+
+.clickable {
+    filter: var(--invert);
+    background-color: transparent !important;
+    border-style: none !important;
+    vertical-align: text-bottom;
+    height: 20px;
+    width: 20px;
+    margin-right: 10px;
+}

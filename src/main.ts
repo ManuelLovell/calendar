@@ -11,6 +11,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <button (click)="toggleContent('moons')">Moons</button>
   <button (click)="toggleContent('import')">Import</button>
   <button id="generateCalendar">Generate</button>
+  <div id="whatsNew"></div>
 </div>
 
 <div id="calendar" class="content">
@@ -72,6 +73,10 @@ const calendarOutputContainer = document.getElementById('calendarOutput') as HTM
 const calendarSelectButton = document.getElementById('calendarButton') as HTMLButtonElement;
 const generateCalendarButton = document.getElementById('generateCalendar') as HTMLButtonElement;
 const headlineArea = document.getElementById('titleName') as HTMLElement;
+
+// Append Whats new
+const whatsNewContainer = document.getElementById("whatsNew")!;
+whatsNewContainer.appendChild(Utilities.GetWhatsNewButton());
 
 let viewingMonth = 1;
 let shownMonth = 1;
