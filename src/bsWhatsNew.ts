@@ -7,6 +7,12 @@ const footer = document.querySelector<HTMLElement>('#bs-whatsnew-notes')!;
 
 whatsnew.innerHTML = `
   <div id="newsContainer">
+    <h1>Calendar! 2/28</h1>
+    I was informed that the 'starting day of the year' wasn't being respected from the DonJon Input.
+    </br> Also I just.. didn't add it at all.  So that's now in there.  I know I've seen some funky stylings going on in some people's screenshots also - but I haven't been able to pinpoint which browsers those are.
+    </br> So if you don't mind dropping a comment on Patreon/Discord/Reddit to let me know what you're using and if it looks funny, I'd appreciate it.
+    </br>
+    </br>
     <h1>Calendar! 1/10</h1>
     Welcome to Calendar!  My own campaigns pay attention to the current date and I've always appreciated the DonJon calendar - but in an effort to get everything inside of OBR and reduce the amount of windows on my screen.. here we are.
     </br>

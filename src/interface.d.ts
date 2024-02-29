@@ -4,6 +4,7 @@ interface SaveFile
     CurrentMonth: string;
     CurrentDay: string;
     NumberMonth: string;
+    StartDayYear: string;
     DaysPerWeek: string;
     NumberMoons: string;
     MoonSet: Moon[];

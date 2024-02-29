@@ -33,6 +33,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 </div>
 
 <div id="days" class="content" style="display:none;">
+    <label for="startDayYear">Year Begins on WeekDay:</label>
+    <input type="number" class="input-mini" id="startDayYear" name="startDayYear" value="1">
+    </br>
     <label for="currentDay">Current Day:</label>
     <input type="number" class="input-mini" id="currentDay" name="currentDay" value="1">
     </br>
@@ -62,6 +65,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 // calendar Inputs
 const calendarNameInput = document.getElementById('calendarName') as HTMLInputElement;
 const daysPerWeekInput = document.getElementById('daysPerWeek') as HTMLInputElement;
+const startDayYearInput = document.getElementById('startDayYear') as HTMLInputElement;
 const monthInputContainer = document.getElementById('monthInputContainer') as HTMLDivElement;
 const numMonthsInput = document.getElementById('numMonths') as HTMLInputElement
 const dayNameInputContainer = document.getElementById('dayNameInputContainer') as HTMLDivElement;
@@ -371,7 +375,9 @@ OBR.onReady(async () =>
         if (userRole === "GM") headlineArea.appendChild(dayForwardButton);
 
         // Create a table for each month
-        let lastWeekday = 1; // Initialize with the first weekday
+        const startingDayForYearNumber = parseInt(startDayYearInput.value);
+        const startingDaysInWeekNumber = parseInt(daysPerWeekInput.value);
+        let lastWeekday = startingDayForYearNumber > startingDaysInWeekNumber ? startingDayForYearNumber % startingDaysInWeekNumber : startingDayForYearNumber; // Initialize with the first weekday
         let newMonth = true; // New month to space the beginning days
         for (let monthIndex = 0; monthIndex < (+numMonthsInput.value); monthIndex++)
         {
@@ -526,6 +532,7 @@ OBR.onReady(async () =>
         const saveData: SaveFile = {
             NameYear: calendarNameInput.value,
             CurrentDay: currentDayInput.value,
+            StartDayYear: (parseInt(startDayYearInput.value) - 1).toString(),
             CurrentMonth: currentMonthInput.value,
             NumberMonth: numMonthsInput.value,
             DaysPerWeek: daysPerWeekInput.value,
@@ -819,6 +826,9 @@ OBR.onReady(async () =>
             // Set the total days in the year
             (document.getElementById('totalDaysInYear') as HTMLInputElement).value = donjonData.year_len ? donjonData.year_len : "336";
 
+            // Set the starting day of the year (DonJonData Starts at 0)
+            startDayYearInput.value = donjonData.first_day ? (parseInt(donjonData.first_day) + 1).toString() : "1";
+
             await generateCalendar();
             const monthName = saveFile?.MonthSet[+saveFile.CurrentMonth - 1]?.Name;
             await OBR.action.setBadgeText(`${monthName ?? saveFile?.CurrentMonth}:${saveFile?.CurrentDay}`);
@@ -879,6 +889,7 @@ OBR.onReady(async () =>
 
         // Set the total days in the year
         donjonData.year_len = saveFile.DaysPerWeek || "336";
+        donjonData.first_day = saveFile.StartDayYear || "0";
 
         return donjonData;
     }
