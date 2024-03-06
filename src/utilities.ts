@@ -153,6 +153,45 @@ export function SetThemeMode(theme: Theme, document: Document): void
     }
 }
 
+export function areObjectsIdentical(obj1: any, obj2: any): boolean
+{
+    // Check if both parameters are objects
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object')
+    {
+        return false;
+    }
+
+    // Check if both objects have the same number of keys
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length)
+    {
+        return false;
+    }
+
+    // Check if all keys and values are identical
+    for (const key of keys1)
+    {
+        const val1 = obj1[key];
+        const val2 = obj2[key];
+
+        // Recursively check nested objects
+        if (typeof val1 === 'object' && typeof val2 === 'object')
+        {
+            if (!areObjectsIdentical(val1, val2))
+            {
+                return false;
+            }
+        } else if (val1 !== val2)
+        {
+            return false;
+        }
+    }
+
+    // If all checks passed, the objects are identical
+    return true;
+}
+
 export function GetWhatsNewButton()
 {
     const newImgElement = document.createElement('img');

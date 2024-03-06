@@ -201,6 +201,16 @@ td {
     align-items: center;
 }
 
+.title-line
+{
+    font-weight: bolder;
+    font-size: large;
+    background-color: transparent;
+    border-color: var(--OBR-Purple-Select);
+    border-width: 2px;
+    border-style: solid;
+}
+
 button {
     background-color: var(--OBR-light-blue);
     border-radius: 8px;
@@ -373,7 +383,7 @@ input[type=number] {
     background-color: transparent !important;
     border-style: none !important;
     vertical-align: text-bottom;
-    height: 20px;
-    width: 20px;
+    height: 25px;
+    width: 25px;
     margin-right: 10px;
 }

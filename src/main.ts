@@ -78,6 +78,10 @@ const calendarSelectButton = document.getElementById('calendarButton') as HTMLBu
 const generateCalendarButton = document.getElementById('generateCalendar') as HTMLButtonElement;
 const headlineArea = document.getElementById('titleName') as HTMLElement;
 
+let roomSavedData: SaveFile;
+let savedDateActionText = "";
+let disableBadgeText = false;
+
 // Append Whats new
 const whatsNewContainer = document.getElementById("whatsNew")!;
 whatsNewContainer.appendChild(Utilities.GetWhatsNewButton());
@@ -162,18 +166,21 @@ OBR.onReady(async () =>
     })
 
     const userRole = await OBR.player.getRole();
+    const userId = await OBR.player.getId();
+
     // Load data no matter who
     const roomData = await OBR.room.getMetadata();
-    const oldSave = roomData[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
+    disableBadgeText = roomData[`${Constants.EXTENSIONID}/bdOff${userId}`] as boolean;
+    roomSavedData = roomData[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
 
     // On Load
     addMoonInput();
     updateMonthInputs();
     updateDayInputs();
 
-    if (oldSave)
+    if (roomSavedData)
     {
-        await importCalendarData(oldSave);
+        await importCalendarData(roomSavedData);
     }
 
     if (userRole === "GM") document.getElementById("calendar")!.style.height = "94%";
@@ -184,11 +191,13 @@ OBR.onReady(async () =>
         document.getElementById("titleLine")!.style.marginTop = "2px";
         OBR.room.onMetadataChange(async (metadata) =>
         {
-            const saveData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
-            if (saveData)
+            const newSavedData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
+            const isOld = Utilities.areObjectsIdentical(newSavedData, roomSavedData);
+            if (newSavedData && !isOld)
             {
-                await importCalendarData(saveData);
+                await importCalendarData(newSavedData);
             }
+            roomSavedData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
         });
         return;
     }
@@ -368,10 +377,32 @@ OBR.onReady(async () =>
             await setCurrentDate();
         };
 
+        const toggleNode = document.createElement('button');
+        toggleNode.classList.add("title-line");
+        toggleNode.title = "Click to toggle on/off the Day Tag on the Action button."
+        toggleNode.value = disableBadgeText ? "OFF" : "ON";
+        toggleNode.textContent = calendarNameInput.value;
+        toggleNode.onclick = async (e) => {
+            e.preventDefault();
+
+            if (toggleNode.value === "ON")
+            {
+                await OBR.action.setBadgeText(undefined);
+                await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/bdOff${userId}`]: true });
+                toggleNode.value = "OFF";
+            }
+            else
+            {
+                await OBR.action.setBadgeText(savedDateActionText);
+                await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/bdOff${userId}`]: false });
+                toggleNode.value = "ON";
+            }
+        };
+        
         // Add calendar name as the caption
         headlineArea.innerHTML = "";
         if (userRole === "GM") headlineArea.appendChild(dayBackButton);
-        headlineArea.appendChild(document.createTextNode(calendarNameInput.value));
+        headlineArea.appendChild(toggleNode);
         if (userRole === "GM") headlineArea.appendChild(dayForwardButton);
 
         // Create a table for each month
@@ -660,7 +691,8 @@ OBR.onReady(async () =>
             const saveData = CreateSaveFile();
             await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/saveData`]: saveData });
             const monthName = saveData?.MonthSet[+saveData.CurrentMonth - 1]?.Name;
-            await OBR.action.setBadgeText(`${monthName ?? saveData?.CurrentMonth}:${saveData?.CurrentDay}`);
+            savedDateActionText = `${monthName ?? saveData?.CurrentMonth}:${saveData?.CurrentDay}`;
+            if (!disableBadgeText) await OBR.action.setBadgeText(savedDateActionText);
         }
     }
 
@@ -831,7 +863,9 @@ OBR.onReady(async () =>
 
             await generateCalendar();
             const monthName = saveFile?.MonthSet[+saveFile.CurrentMonth - 1]?.Name;
-            await OBR.action.setBadgeText(`${monthName ?? saveFile?.CurrentMonth}:${saveFile?.CurrentDay}`);
+            
+            savedDateActionText = `${monthName ?? saveFile?.CurrentMonth}:${saveFile?.CurrentDay}`;
+            if (!disableBadgeText) await OBR.action.setBadgeText(savedDateActionText);
 
             if (!saveFile)
             {

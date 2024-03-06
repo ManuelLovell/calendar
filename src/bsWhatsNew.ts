@@ -7,6 +7,11 @@ const footer = document.querySelector<HTMLElement>('#bs-whatsnew-notes')!;
 
 whatsnew.innerHTML = `
   <div id="newsContainer">
+    <h1>Calendar! 3/5</h1>
+    Added a toggle for the action badge text.
+    </br> Calendar doesn't have a dedicated setting spot.. and I kind of like that.
+    </br> So the button itself is the year name on the calendar. Now outlined in purple.
+    </br> The setting should save to the room and be per-player.
     <h1>Calendar! 2/28</h1>
     I was informed that the 'starting day of the year' wasn't being respected from the DonJon Input.
     </br> Also I just.. didn't add it at all.  So that's now in there.  I know I've seen some funky stylings going on in some people's screenshots also - but I haven't been able to pinpoint which browsers those are.
