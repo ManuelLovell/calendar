@@ -7,6 +7,9 @@ const footer = document.querySelector<HTMLElement>('#bs-whatsnew-notes')!;
 
 whatsnew.innerHTML = `
   <div id="newsContainer">
+    <h1>Calendar! 3/18</h1>
+    Fixed an issue with the moon phase resetting when the month changes.
+    </br> Sorry for the delay on that one!
     <h1>Calendar! 3/5</h1>
     Added a toggle for the action badge text.
     </br> Calendar doesn't have a dedicated setting spot.. and I kind of like that.

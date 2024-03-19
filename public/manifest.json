@@ -1,7 +1,7 @@
 {
     "name": "Calendar!",
     "description": "A customizable calendar for your campaign room.",
-    "version": "1.1",
+    "version": "1.11",
     "author": "Battle-System",
     "icon": "/logo.png",
     "manifest_version": 1,

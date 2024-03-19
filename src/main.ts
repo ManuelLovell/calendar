@@ -698,7 +698,17 @@ OBR.onReady(async () =>
 
     function getMoonPhase(dayNumber: number, cycle: number, shift: number, name: string)
     {
-        const totalDays = dayNumber + shift - 1; // Adjusted for 1-based indexing
+        console.log("hit");
+        // Get month data
+        let daysPast = dayNumber;
+        const monthNumber = parseInt(currentMonthInput.value);
+        for (let i = 1; i < monthNumber; i++)
+        {
+            const daysInThisMonth = GetSpecialValue("month", i, "Days");
+            daysPast += parseInt(daysInThisMonth);
+        }
+        
+        const totalDays = daysPast + shift - 1; // Adjusted for 1-based indexing
         const fractionalPhase = (totalDays % cycle) / cycle; // Fractional part of the cycle
 
         let phase: string;
