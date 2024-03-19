@@ -1,5 +1,8 @@
-import{O as e,C as n}from"./constants-22hXSSUW.js";const o=document.querySelector("#bs-whatsnew"),a=document.querySelector("#bs-whatsnew-notes");o.innerHTML=`
+import{O as e,C as n}from"./constants-_ZGqeghE.js";const o=document.querySelector("#bs-whatsnew"),a=document.querySelector("#bs-whatsnew-notes");o.innerHTML=`
   <div id="newsContainer">
+    <h1>Calendar! 3/18</h1>
+    Fixed an issue with the moon phase resetting when the month changes.
+    </br> Sorry for the delay on that one!
     <h1>Calendar! 3/5</h1>
     Added a toggle for the action badge text.
     </br> Calendar doesn't have a dedicated setting spot.. and I kind of like that.
