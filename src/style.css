@@ -207,13 +207,14 @@ button:hover {
 #calendarContainer {
     height: 58%;
     overflow-x: hidden;
+    scrollbar-color: var(--OBR-font) var(--OBR-Purple-Select);
+    scrollbar-width: thin;
 }
 
 table {
     border-collapse: collapse;
     width: 100%;
     height: 100%;
-    margin-top: 10px;
     border-radius: 6px;
     overflow: hidden;
 }
@@ -352,8 +353,8 @@ table {
     position: relative;
     display: block;
     top: 20px;
+    height: 24px;
     width: 100%;
-    height: 40px;
     font-size: 12px;
     font-weight: 100;
 }
