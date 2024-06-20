@@ -1,15 +1,78 @@
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
-    <script type="module" crossorigin src="/assets/main-fpiir5nG.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/constants-_ZGqeghE.js">
-    <link rel="stylesheet" crossorigin href="/assets/main-ylcERJxb.css">
-  </head>
-  <body>
-    <div id="app"></div>
-  </body>
+    <title>Calendar!</title>
+  <script type="module" crossorigin src="/assets/main-G4IOi_2v.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/bsConstants-2Wq3zd31.js">
+  <link rel="stylesheet" crossorigin href="/assets/main-vmyNKxEX.css">
+</head>
+
+<body>
+    <div id="app">
+        <div id="tabControls">
+            <button class="view-button selected" id="calendarButton">Calendar</button>
+            <button class="view-button" id="configButton">Config</button>
+            <button class="view-button" id="importButton">Import</button>
+            <div id="whatsNew"></div>
+        </div>
+        <div id="calendarPanel" class="panel">
+            <div id="calendarHeader">
+                <div id="calendarSpellContainer" style="display: none;"></div>
+                <div id="calendarTitleContainer">Calendar!</div>
+                <div id="calendarProfContainer" style="display: none;"></div>
+            </div>
+            <div id="calendarMoonContainer"></div>
+            <div id="calendarContainer"></div>
+        </div>
+        <div id="configPanel" class="panel" style="display: none;">
+            <div class="form-group">
+                <label for="configName">Calendar Name/Year:</label>
+                <input type="text" id="configName" name="configName" value="Testers">
+            </div>
+            <hr>
+            <div class="form-group">
+                <label for="configMonth">Current Month:</label>
+                <input type="number" class="input-mini" id="configMonth" name="configMonth" value="1">
+            </div>
+            <div class="form-group">
+                <label for="configMonthsNum">Number of Months:</label>
+                <input type="number" class="input-mini" id="configMonthsNum" name="configMonthsNum" min="1" value="12">
+            </div>
+            <div id="configMonthInputContainer"></div>
+            <hr>
+            <div class="form-group">
+                <label for="configDaysYearStart">Year Begins on WeekDay:</label>
+                <input type="number" class="input-mini" id="configDaysYearStart" name="configDaysYearStart" value="1">
+            </div>
+            <div class="form-group">
+                <label for="configDayCurrent">Current Day:</label>
+                <input type="number" class="input-mini" id="configDayCurrent" name="configDayCurrent" value="1">
+            </div>
+            <div class="form-group">
+                <label for="configDaysPerWeek">Days per Week:</label>
+                <input type="number" class="input-mini" id="configDaysPerWeek" name="configDaysPerWeek" min="1" value="7">
+            </div>
+            <div id="configDayNameContainer"></div>
+            <input type="number" style="display: none;" class="input-mini" id="configDaysInYear" name="configDaysInYear" min="1" value="365">
+            <hr>
+            <div class="form-group">
+                <label for="configMoonsNum">Number of Moons:</label>
+                <input type="number" class="input-mini" id="configMoonsNum" name="configMoonsNum" min="1" value="1">
+            </div>
+            <div id="configMoonsInputContainer"></div>
+            <button id="generateCalendar">Generate</button>
+        </div>        
+        <div id="importPanel" class="panel" style="display: none;">
+            <label for="importTextInput">DonJon Calendar Importer:</label>
+            </br>
+            <textarea id="importTextInput" rows="20" style="width: 100%;"></textarea>
+            </br>
+            <button id="importConfirmButton">Import DonJon Calendar</button>
+        </div>
+    </div>
+</body>
+
 </html>
