@@ -23,6 +23,7 @@ interface Moon
     Name: string;
     Cycle: string;
     Shift: string;
+    Color: string;
 }
 
 interface OutsideInput

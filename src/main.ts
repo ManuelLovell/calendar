@@ -1,279 +1,249 @@
 import OBR from '@owlbear-rodeo/sdk';
-import * as Utilities from './utilities';
+import * as Utilities from './bsUtilities';
+import { Constants } from './bsConstants';
+import { BSCACHE } from './bsSceneCache';
 import './style.css'
-import { Constants } from './constants';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<div id="floating-header">
-  <button id="calendarButton" class="button-selected" (click)="toggleContent('calendar')">Calendar</button>
-  <button (click)="toggleContent('months')">Months</button>
-  <button (click)="toggleContent('days')">Days</button>
-  <button (click)="toggleContent('moons')">Moons</button>
-  <button (click)="toggleContent('import')">Import</button>
-  <button id="generateCalendar">Generate</button>
-  <div id="whatsNew"></div>
-</div>
-
-<div id="calendar" class="content">
-    <h2 id="titleLine"><div id="spellLevelContainer" style="display:none;"></div><div id="titleName">Calendar!</div><div id="profLevelContainer" style="display:none;"></div></h2>
-    <div id="moonContainer"></div>
-    <div id="calendarOutput"></div>
-</div>
-
-<div id="months" class="content" style="display:none;">
-    <label for="calendarName">Calendar Name/Year:</label>
-    <input type="text" id="calendarName" name="calendarName" value="Testers">
-    </br>
-    <label for="currentMonth">Current Month:</label>
-    <input type="number" class="input-mini" id="currentMonth" name="currentMonth" value="1">
-    </br>
-    <label for="numMonths">Number of Months:</label>
-    <input type="number" class="input-mini" id="numMonths" name="numMonths" min="1" value="12">
-    <div id="monthInputContainer"></div>
-</div>
-
-<div id="days" class="content" style="display:none;">
-    <label for="startDayYear">Year Begins on WeekDay:</label>
-    <input type="number" class="input-mini" id="startDayYear" name="startDayYear" value="1">
-    </br>
-    <label for="currentDay">Current Day:</label>
-    <input type="number" class="input-mini" id="currentDay" name="currentDay" value="1">
-    </br>
-    <label for="daysPerWeek">Days per Week:</label>
-    <input type="number" class="input-mini" id="daysPerWeek" name="daysPerWeek" min="1" value="7">
-    <div id="dayNameInputContainer"></div>
-        
-    <input type="number" style="display: none;" class="input-mini" id="totalDaysInYear" name="totalDaysInYear" min="1" value="365">
-</div>
-
-<div id="moons" class="content" style="display:none;">
-    <label for="numMoons">Number of Moons:</label>
-    <input type="number" class="input-mini" id="numMoons" name="numMoons" min="1" value="1">
-    <div id="moonInputContainer"></div>
-</div>
-
-<div id="import" class="content" style="display:none;">
-    <label for="donjonJson">DonJon Calendar Importer:</label>
-    </br>
-    <textarea id="donjonJson" rows="20" style="width: 100%;"></textarea>
-    </br>
-    <button id="importDonJon">Import DonJon Calendar</button>
-</div>
-<div class="bottom-border"></div>
-`;
-
-// calendar Inputs
-const calendarNameInput = document.getElementById('calendarName') as HTMLInputElement;
-const daysPerWeekInput = document.getElementById('daysPerWeek') as HTMLInputElement;
-const startDayYearInput = document.getElementById('startDayYear') as HTMLInputElement;
-const monthInputContainer = document.getElementById('monthInputContainer') as HTMLDivElement;
-const numMonthsInput = document.getElementById('numMonths') as HTMLInputElement
-const dayNameInputContainer = document.getElementById('dayNameInputContainer') as HTMLDivElement;
-const moonInputContainer = document.getElementById('moonInputContainer') as HTMLDivElement;
-const moonNumberInput = document.getElementById('numMoons') as HTMLInputElement;
-const generateButton = document.getElementById('generateCalendar')!;
-const donJonButton = document.getElementById('importDonJon')!;
-const calendarOutputContainer = document.getElementById('calendarOutput') as HTMLDivElement;
-const calendarSelectButton = document.getElementById('calendarButton') as HTMLButtonElement;
-const generateCalendarButton = document.getElementById('generateCalendar') as HTMLButtonElement;
-const headlineArea = document.getElementById('titleName') as HTMLElement;
-
-let roomSavedData: SaveFile;
-let savedDateActionText = "";
-let disableBadgeText = false;
-
-// Append Whats new
-const whatsNewContainer = document.getElementById("whatsNew")!;
-whatsNewContainer.appendChild(Utilities.GetWhatsNewButton());
-
-let viewingMonth = 1;
-let shownMonth = 1;
-
-const spellContainer = document.getElementById('spellLevelContainer') as HTMLDivElement;
-const spellLabel = document.createElement('div');
-let spellDCValue: number = 0;
-spellLabel.textContent = "SpellLevel: ";
-spellLabel.classList.add('moon-phase-label');
-spellLabel.style.marginTop = "4px";
-spellContainer?.appendChild(spellLabel);
-const spellInput = document.createElement('input');
-spellInput.id = "spellInput";
-spellInput.type = 'number';
-spellInput.classList.add('moon-mage-stuff');
-spellInput.onchange = (event) =>
+async function BeginCalendar()
 {
-    const target = event.target as HTMLInputElement;
-    const value = +target.value;
-    switch (value)
-    {
-        case 0:
-            spellDCValue = 0;
-            break;
-        case 1:
-            spellDCValue = 0;
-            break;
-        case 2:
-            spellDCValue = 2;
-            break;
-        case 3:
-            spellDCValue = 4;
-            break;
-        case 4:
-            spellDCValue = 6;
-            break;
-        case 5:
-            spellDCValue = 8;
-            break;
-        default:
-            spellDCValue = 8;
-            break;
-    }
-
-    const dcElements = document.querySelectorAll<HTMLLabelElement>('.moon-dc-label');
-    for (const element of dcElements)
-    {
-        const baseCheck = +(element.getAttribute('data-dc')!);
-        element.textContent = `Spell DC: ${(baseCheck + spellDCValue).toString()}`;
-    }
-};
-spellContainer?.appendChild(spellInput);
-
-const profContainer = document.getElementById('profLevelContainer') as HTMLDivElement;
-const profLabel = document.createElement('div');
-profLabel.textContent = "Proficiency: ";
-profLabel.classList.add('moon-phase-label');
-profLabel.style.marginTop = "4px";
-profContainer?.appendChild(profLabel);
-const profInput = document.createElement('input');
-profInput.id = "profInput";
-profInput.type = 'number';
-profInput.classList.add('moon-mage-stuff');
-profContainer?.appendChild(profInput);
-
-const moonContainer = document.getElementById('moonContainer') as HTMLElement;
-
-const currentDayInput = document.getElementById('currentDay')! as HTMLInputElement;
-const currentMonthInput = document.getElementById('currentMonth')! as HTMLInputElement;
+    await BSCACHE.InitializeCache();
+    await CALENDAR.InitializeCalendar();
+    BSCACHE.SetupHandlers();
+}
 
 OBR.onReady(async () =>
 {
-    // Set theme accordingly
-    const theme = await OBR.theme.getTheme();
-    Utilities.SetThemeMode(theme, document);
-    OBR.theme.onChange((theme) =>
+    const sceneReady = await OBR.scene.isReady();
+
+    if (sceneReady === false)
     {
-        Utilities.SetThemeMode(theme, document);
-    })
-
-    const userRole = await OBR.player.getRole();
-    const userId = await OBR.player.getId();
-
-    // Load data no matter who
-    const roomData = await OBR.room.getMetadata();
-    disableBadgeText = roomData[`${Constants.EXTENSIONID}/bdOff${userId}`] as boolean;
-    roomSavedData = roomData[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
-
-    // On Load
-    addMoonInput();
-    updateMonthInputs();
-    updateDayInputs();
-
-    if (roomSavedData)
-    {
-        await importCalendarData(roomSavedData);
-    }
-
-    if (userRole === "GM") document.getElementById("calendar")!.style.height = "94%";
-    if (userRole === "PLAYER")
-    {
-        document.getElementById("floating-header")!.style.display = "none";
-        document.getElementById("calendar")!.style.marginTop = "0";
-        document.getElementById("titleLine")!.style.marginTop = "2px";
-        OBR.room.onMetadataChange(async (metadata) =>
+        const startup = OBR.scene.onReadyChange(async (ready) =>
         {
-            const newSavedData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
-            const isOld = Utilities.areObjectsIdentical(newSavedData, roomSavedData);
-            if (newSavedData && !isOld)
+            if (ready)
             {
-                await importCalendarData(newSavedData);
+                startup(); // Kill startup Handler
+                await BeginCalendar();
             }
-            roomSavedData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
         });
-        return;
+    }
+    else
+    {
+        await BeginCalendar();
+    }
+});
+
+class CalendarMain
+{
+    MAINPANEL = document.getElementById('calendarPanel') as HTMLDivElement;
+    MAINBUTTON = document.getElementById('calendarButton') as HTMLButtonElement;
+    MOONCONTAINER = document.getElementById('calendarMoonContainer') as HTMLDivElement;
+    CALENDARCONTAINER = document.getElementById('calendarContainer') as HTMLDivElement;
+
+    TITLECONTAINER = document.getElementById('calendarTitleContainer') as HTMLDivElement;
+
+    CONFIGPANEL = document.getElementById('configPanel') as HTMLDivElement;
+    CONFIGBUTTON = document.getElementById('configButton') as HTMLButtonElement;
+    CONFIGNAMEINPUT = document.getElementById('configName') as HTMLInputElement;
+
+    CONFIGMONTHINPUT = document.getElementById('configMonth') as HTMLInputElement;
+    CONFIGMONTHSNUMINPUT = document.getElementById('configMonthsNum') as HTMLInputElement;
+    CONFIGMONTHSINPUTCONTAINER = document.getElementById('configMonthInputContainer') as HTMLDivElement;
+
+    CONFIGDAYSPERWEEKINPUT = document.getElementById('configDaysPerWeek') as HTMLInputElement;
+    CONFIGDAYSYEARSTARTINPUT = document.getElementById('configDaysYearStart') as HTMLInputElement;
+    CONFIGDAYCURRENTINPUT = document.getElementById('configDayCurrent') as HTMLInputElement;
+    CONFIGDAYSINYEARINPUT = document.getElementById('configDaysInYear') as HTMLInputElement;
+    CONFIGDAYSINWEEKCONTAINER = document.getElementById('configDayNameContainer') as HTMLDivElement;
+
+    CONFIGMOONSNUMINPUT = document.getElementById('configMoonsNum') as HTMLInputElement;
+    CONFIGMOONSINPUTCONTAINER = document.getElementById('configMoonsInputContainer') as HTMLDivElement;
+
+    GENERATEBUTTON = document.getElementById('generateCalendar') as HTMLButtonElement;
+
+    IMPORTPANEL = document.getElementById('importPanel') as HTMLDivElement;
+    IMPORTBUTTON = document.getElementById('importButton') as HTMLButtonElement;
+    IMPORTTEXTINPUT = document.getElementById('importTextInput') as HTMLTextAreaElement;
+    IMPORTCONFIRMBUTTON = document.getElementById('importConfirmButton') as HTMLButtonElement;
+
+    WHATSNEWCONTAINER = document.getElementById("whatsNew") as HTMLDivElement;
+    SPELLPROFINPUT = document.getElementById("calendarProfContainer") as HTMLDivElement;
+    SPELLDCINPUT = document.getElementById("calendarSpellContainer") as HTMLDivElement;
+
+    roomSavedData: SaveFile;
+    savedDateActionText = "";
+    disableBadgeText = false;
+    debouncedSaveData: any;
+
+    viewingMonth = 1;
+    shownMonth = 1;
+    spellDCValue = 1;
+
+    constructor()
+    {
+        this.roomSavedData = {} as any;
+        this.debouncedSaveData = Utilities.Debounce(this.SaveData, 1000);
     }
 
-    /// Outside Inputs
-    OBR.room.onMetadataChange(async (metadata) =>
+    public async InitializeCalendar()
     {
-        const outside = metadata[`${Constants.OUTSIDEID}/data`] as OutsideInput;
-        if (outside)
+        await this.SetupCalendar();
+    }
+
+    public async SetupCalendar()
+    {
+        if (BSCACHE.savedData)
         {
-            if (!Utilities.IsThisOld(outside.Timestamp, "Outside", "CALENDAR"))
-            {
-                currentDayInput.value = ((+currentDayInput.value) + (+outside.Increment)).toString();
-                await setCurrentDate();
-            }
+            await this.ImportCalendarData(BSCACHE.savedData);
         }
-    });
-
-    ///
-    const buttons = document.querySelectorAll('#floating-header button');
-    const contents = document.querySelectorAll<HTMLDivElement>('.content');
-
-    buttons.forEach((button) =>
-    {
-        button.addEventListener('click', function ()
+        else
         {
-            let targetContentId = button.textContent?.toLowerCase();
+            this.AddDayInputs();
+            this.AddMonthInputs();
+            this.AddMoonInput();
+            await this.GenerateCalendar();
+        }
+        this.WHATSNEWCONTAINER.appendChild(Utilities.GetWhatsNewButton());
+        this.SetupTabControls();
+        this.SetupOnChangeEvents();
+        this.SetupMoonMagic();
+    }
 
-            if (targetContentId === "generate") targetContentId = "calendar";
-
-            if (targetContentId)
-            {
-                contents.forEach((content) =>
-                {
-                    content.style.display = content.id === targetContentId ? 'block' : 'none';
-                });
-
-                // Remove the 'button-selected' class from all buttons
-                buttons.forEach((btn) =>
-                {
-                    btn.classList.remove('button-selected');
-                });
-
-                // Add the 'button-selected' class to the clicked button
-                if (button === generateCalendarButton)
-                {
-                    calendarSelectButton.classList.add('button-selected');
-                }
-                else
-                {
-                    button.classList.add('button-selected');
-                }
-            }
-        });
-    });
-
-    currentMonthInput.onchange = async () => await setCurrentDate();
-    currentDayInput.onchange = async () => await setCurrentDate();
-
-    // Setup Onclicks
-    generateButton.onclick = async () => await generateCalendar();
-    donJonButton.onclick = async () => await importCalendarData();
-
-    // Setup Onchange Handlers
-    daysPerWeekInput.onchange = () => updateDayInputs();
-    moonNumberInput.onchange = () => addMoonInput();
-    numMonthsInput.onchange = () => updateMonthInputs();
-
-    function updateMonthInputs()
+    private SetupOnChangeEvents()
     {
-        // Clear existing month input fields
-        monthInputContainer.innerHTML = '';
+        this.CONFIGDAYSPERWEEKINPUT.onchange = async () => await this.SetCurrentDate();
+        this.CONFIGDAYCURRENTINPUT.onchange = async () => await this.SetCurrentDate();
 
-        for (let i = 1; i <= (+numMonthsInput.value); i++)
+        this.CONFIGDAYSPERWEEKINPUT.onchange = () => this.AddDayInputs();
+        this.CONFIGMOONSNUMINPUT.onchange = () => this.AddMoonInput();
+        this.CONFIGMONTHSNUMINPUT.onchange = () => this.AddMonthInputs();
+
+        this.GENERATEBUTTON.onclick = async () =>
+        {
+            await this.GenerateCalendar();
+            const saveData = this.CreateSaveFile();
+            await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/saveData`]: saveData });
+            this.MAINBUTTON.click();
+        }
+
+        this.IMPORTCONFIRMBUTTON.onclick = async () => await this.ImportCalendarData();
+    }
+
+    public SetupTabControls()
+    {
+        // Setup Tab Controls
+        this.MAINBUTTON.onclick = async (e) =>
+        {
+            e.preventDefault();
+
+            this.MAINPANEL.style.display = "block";
+            this.MAINBUTTON.classList.add("selected");
+
+            this.CONFIGPANEL.style.display = "none";
+            this.CONFIGBUTTON.classList.remove("selected");
+            this.IMPORTPANEL.style.display = "none";
+            this.IMPORTBUTTON.classList.remove("selected");
+        };
+
+        this.CONFIGBUTTON.onclick = async (e) =>
+        {
+            e.preventDefault();
+
+            this.CONFIGPANEL.style.display = "block";
+            this.CONFIGBUTTON.classList.add("selected");
+
+            this.MAINPANEL.style.display = "none";
+            this.MAINBUTTON.classList.remove("selected");
+            this.IMPORTPANEL.style.display = "none";
+            this.IMPORTBUTTON.classList.remove("selected");
+        };
+
+        this.IMPORTBUTTON.onclick = async (e) =>
+        {
+            e.preventDefault();
+
+            this.IMPORTPANEL.style.display = "block";
+            this.IMPORTBUTTON.classList.add("selected");
+
+            this.MAINPANEL.style.display = "none";
+            this.MAINBUTTON.classList.remove("selected");
+            this.CONFIGPANEL.style.display = "none";
+            this.CONFIGBUTTON.classList.remove("selected");
+        };
+    }
+
+    private SetupMoonMagic()
+    {
+        const spellContainer = document.getElementById('calendarSpellContainer') as HTMLDivElement;
+        const spellLabel = document.createElement('div');
+        let spellDCValue: number = 0;
+        spellLabel.textContent = "SpLvl: ";
+        spellLabel.classList.add('lunar-magic-label');
+        spellLabel.style.marginTop = "4px";
+        spellContainer?.appendChild(spellLabel);
+        const spellInput = document.createElement('input');
+        spellInput.id = "spellInput";
+        spellInput.type = 'number';
+        spellInput.classList.add('moon-mage-stuff');
+        spellInput.onchange = (event) =>
+        {
+            const target = event.target as HTMLInputElement;
+            const value = +target.value;
+            switch (value)
+            {
+                case 0:
+                    spellDCValue = 0;
+                    break;
+                case 1:
+                    spellDCValue = 0;
+                    break;
+                case 2:
+                    spellDCValue = 2;
+                    break;
+                case 3:
+                    spellDCValue = 4;
+                    break;
+                case 4:
+                    spellDCValue = 6;
+                    break;
+                case 5:
+                    spellDCValue = 8;
+                    break;
+                default:
+                    spellDCValue = 8;
+                    break;
+            }
+
+            const dcElements = document.querySelectorAll<HTMLLabelElement>('.moon-dc-label');
+            for (const element of dcElements)
+            {
+                const baseCheck = +(element.getAttribute('data-dc')!);
+                element.textContent = `Spell DC: ${(baseCheck + spellDCValue).toString()}`;
+            }
+        };
+        spellContainer?.appendChild(spellInput);
+
+        const profContainer = document.getElementById('calendarProfContainer') as HTMLDivElement;
+        const profLabel = document.createElement('div');
+        profLabel.textContent = " :Prof";
+        profLabel.classList.add('lunar-magic-label');
+        profLabel.style.marginTop = "4px";
+        const profInput = document.createElement('input');
+        profInput.id = "profInput";
+        profInput.type = 'number';
+        profInput.classList.add('moon-mage-stuff');
+        profContainer?.appendChild(profInput);
+        profContainer?.appendChild(profLabel);
+    }
+
+    private AddMonthInputs()
+    {
+        //Clear existing month input fields
+        this.CONFIGMONTHSINPUTCONTAINER.innerHTML = '';
+
+        for (let i = 1; i <= (+this.CONFIGMONTHSNUMINPUT.value); i++)
         {
             const monthDiv = document.createElement('div');
+            monthDiv.classList.add('month-input-container');
             monthDiv.innerHTML = `
             <label for="month${i}Name">Name ${i}:</label>
             <input type="text" id="month${i}Name" name="month${i}Name" value="Month${i}">
@@ -281,71 +251,75 @@ OBR.onReady(async () =>
             <label for="month${i}Days">Days:</label>
             <input type="number" class="input-mini" id="month${i}Days" name="month${i}Days" min="1" value="30">
           `;
-            monthInputContainer.appendChild(monthDiv);
+            this.CONFIGMONTHSINPUTCONTAINER.appendChild(monthDiv);
         }
     }
 
-    function updateDayInputs()
+    private AddDayInputs()
     {
         // Clear existing day name input fields
-        dayNameInputContainer.innerHTML = '';
+        this.CONFIGDAYSINWEEKCONTAINER.innerHTML = '';
 
-        for (let i = 1; i <= (+daysPerWeekInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGDAYSPERWEEKINPUT.value); i++)
         {
             const dayNameDiv = document.createElement('div');
+            dayNameDiv.classList.add('day-input-container');
             dayNameDiv.innerHTML = `
             <label for="day${i}Name">Day ${i} Name:</label>
             <input type="text" id="day${i}Name" name="day${i}Name" value="Day${i}">
           `;
-            dayNameInputContainer.appendChild(dayNameDiv);
+            this.CONFIGDAYSINWEEKCONTAINER.appendChild(dayNameDiv);
         }
     }
 
-    function addMoonInput()
+    private AddMoonInput()
     {
         // Clear existing moon input fields
-        moonInputContainer.innerHTML = '';
+        this.CONFIGMOONSINPUTCONTAINER.innerHTML = '';
 
-        for (let i = 1; i <= (+moonNumberInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGMOONSNUMINPUT.value); i++)
         {
             const moonDiv = document.createElement('div');
             moonDiv.innerHTML = `
-            <label for="moon${i}Name">Name ${i}:</label>
+            <label for="moon${i}Name">Name:</label>
             <input type="text" class="moon-input" id="moon${i}Name" name="moon${i}Name" value="Moon${i}">
     
-            <label for="moon${i}Cycle">Cycle ${i} (days):</label>
+            <label for="moon${i}Cycle">Cycle (days):</label>
             <input type="number" class="input-mini" id="moon${i}Cycle" name="moon${i}Cycle" min="1" value="30">
-    
-            <label for="moon${i}Shift">Shift ${i}:</label>
+            </br>
+            <label for="moon${i}Shift">○ Shift:</label>
             <input type="number" class="input-mini" id="moon${i}Shift" name="moon${i}Shift" min="0" value="0">
+            
+            <label for="moon${i}Color">Color(Hex):</label>
+            <input type="text" class="moon-input" id="moon${i}Color" name="moon${i}Color" value="#000000">
           `;
-            moonInputContainer.appendChild(moonDiv);
+            this.CONFIGMOONSINPUTCONTAINER.appendChild(moonDiv);
         }
     }
 
-    function GetSpecialValue(category: "month" | "day" | "moon", index: number, type: "Name" | "Days" | "Cycle" | "Shift")
+    private GetSpecialValue(category: "month" | "day" | "moon", index: number, type: "Name" | "Days" | "Cycle" | "Shift" | "Color")
     {
         return (document.getElementById(`${category}${index}${type}`) as HTMLInputElement).value;
     }
 
-    async function generateCalendar()
+    public async GenerateCalendar()
     {
         // Get month names and days
         const monthNames = [];
         const monthDays = [];
-        for (let i = 1; i <= (+numMonthsInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGMONTHSNUMINPUT.value); i++)
         {
-            const monthName = GetSpecialValue("month", i, "Name");
-            const monthDay = GetSpecialValue("month", i, "Days");
+            const monthName = this.GetSpecialValue("month", i, "Name");
+            const monthDay = this.GetSpecialValue("month", i, "Days");
             monthNames.push(monthName);
             monthDays.push(monthDay);
         }
 
         // Get day names
         const dayNames = [];
-        for (let i = 1; i <= (+daysPerWeekInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGDAYSPERWEEKINPUT.value); i++)
         {
-            const dayName = GetSpecialValue("day", i, "Name");
+            const dayName = this.GetSpecialValue("day", i, "Name");
             dayNames.push(dayName);
         }
 
@@ -353,122 +327,152 @@ OBR.onReady(async () =>
         const calendarContainer = document.createElement('div');
         calendarContainer.classList.add('calendar-system-container');
 
-        // Create Day Toggles
-        const dayBackButton = document.createElement('button');
-        dayBackButton.title = "Select Previous Day";
-        dayBackButton.classList.add("day-back-button");
-        dayBackButton.classList.add("clickable");
-        dayBackButton.style.background = "url(./back-day.svg) no-repeat center center";
-        dayBackButton.style.backgroundSize = 'contain';
-        dayBackButton.onclick = async () =>
-        {
-            currentDayInput.value = (+currentDayInput.value - 1).toString();
-            await setCurrentDate();
-        };
-        const dayForwardButton = document.createElement('button');
-        dayForwardButton.title = "Select Next Day";
-        dayForwardButton.classList.add("day-forward-button");
-        dayForwardButton.classList.add("clickable");
-        dayForwardButton.style.background = "url(./forward-day.svg) no-repeat center center";
-        dayForwardButton.style.backgroundSize = 'contain';
-        dayForwardButton.onclick = async () =>
-        {
-            currentDayInput.value = (+currentDayInput.value + 1).toString();
-            await setCurrentDate();
-        };
-
         const toggleNode = document.createElement('button');
         toggleNode.classList.add("title-line");
         toggleNode.title = "Click to toggle on/off the Day Tag on the Action button."
-        toggleNode.value = disableBadgeText ? "OFF" : "ON";
-        toggleNode.textContent = calendarNameInput.value;
-        toggleNode.onclick = async (e) => {
+        toggleNode.value = BSCACHE.disableBadgeText ? "OFF" : "ON";
+        toggleNode.textContent = this.CONFIGNAMEINPUT.value;
+        toggleNode.onclick = async (e) =>
+        {
             e.preventDefault();
 
             if (toggleNode.value === "ON")
             {
                 await OBR.action.setBadgeText(undefined);
-                await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/bdOff${userId}`]: true });
+                await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/bdOff${BSCACHE.playerId}`]: true });
                 toggleNode.value = "OFF";
             }
             else
             {
-                await OBR.action.setBadgeText(savedDateActionText);
-                await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/bdOff${userId}`]: false });
+                await OBR.action.setBadgeText(BSCACHE.savedDateActionText);
+                await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/bdOff${BSCACHE.playerId}`]: false });
                 toggleNode.value = "ON";
             }
         };
-        
+
         // Add calendar name as the caption
-        headlineArea.innerHTML = "";
-        if (userRole === "GM") headlineArea.appendChild(dayBackButton);
-        headlineArea.appendChild(toggleNode);
-        if (userRole === "GM") headlineArea.appendChild(dayForwardButton);
+        this.TITLECONTAINER.innerHTML = "";
+        this.TITLECONTAINER.appendChild(toggleNode);
 
         // Create a table for each month
-        const startingDayForYearNumber = parseInt(startDayYearInput.value);
-        const startingDaysInWeekNumber = parseInt(daysPerWeekInput.value);
+        const startingDayForYearNumber = parseInt(this.CONFIGDAYSYEARSTARTINPUT.value);
+        const startingDaysInWeekNumber = parseInt(this.CONFIGDAYSPERWEEKINPUT.value);
         let lastWeekday = startingDayForYearNumber > startingDaysInWeekNumber ? startingDayForYearNumber % startingDaysInWeekNumber : startingDayForYearNumber; // Initialize with the first weekday
         let newMonth = true; // New month to space the beginning days
-        for (let monthIndex = 0; monthIndex < (+numMonthsInput.value); monthIndex++)
+        for (let monthIndex = 0; monthIndex < (+this.CONFIGMONTHSNUMINPUT.value); monthIndex++)
         {
             const monthBackButton = document.createElement('button');
             monthBackButton.title = "View previous Month";
             monthBackButton.classList.add("mon-back-button");
             monthBackButton.classList.add("clickable");
-            monthBackButton.style.background = "url(./back-month.svg) no-repeat center center";
+            monthBackButton.style.background = "url(./month-back.svg) no-repeat center center";
             monthBackButton.style.backgroundSize = 'contain';
             monthBackButton.onclick = () =>
             {
-                let newValue = (viewingMonth - 1);
+                let newValue = (this.viewingMonth - 1);
                 if (newValue < 1)
                 {
-                    newValue = (+numMonthsInput.value);
+                    newValue = (+this.CONFIGMONTHSNUMINPUT.value);
                 }
-                viewingMonth = newValue;
-                changeVisibleMonth();
+                this.viewingMonth = newValue;
+                this.ChangeVisibleMonth();
             };
             const monthForwardButton = document.createElement('button');
             monthForwardButton.title = "View next Month";
             monthForwardButton.classList.add("mon-forward-button");
             monthForwardButton.classList.add("clickable");
-            monthForwardButton.style.background = "url(./forward-month.svg) no-repeat center center";
+            monthForwardButton.style.background = "url(./month-forward.svg) no-repeat center center";
             monthForwardButton.style.backgroundSize = 'contain';
             monthForwardButton.onclick = async () =>
             {
-                let newValue = (viewingMonth + 1);
-                if (newValue > (+numMonthsInput.value))
+                let newValue = (this.viewingMonth + 1);
+                if (newValue > (+this.CONFIGMONTHSNUMINPUT.value))
                 {
                     newValue = 1;
                 }
-                viewingMonth = newValue;
-                changeVisibleMonth();
+                this.viewingMonth = newValue;
+                this.ChangeVisibleMonth();
             };
 
             const monthTable = document.createElement('table');
             monthTable.classList.add('calendar-system');
             monthTable.id = `monthTable${monthIndex}`;
+            const monthTableHead = monthTable.createTHead();
+            const monthTableBody = monthTable.createTBody();
+            monthTableBody.classList.add('month-table-body');
 
             // Add month header
             const monthName = monthNames[monthIndex] ? monthNames[monthIndex] : `Month ${(monthIndex + 1).toString()}`;
 
-            const monthHeaderRow = monthTable.insertRow();
+            // Current MONTH Check//
+            ///////////////////////
+            const monthHeaderRow = monthTableHead.insertRow();
             monthHeaderRow.classList.add("month-row");
             const monthHeaderCell = monthHeaderRow.insertCell();
             monthHeaderCell.classList.add("month-header-cell");
+            monthHeaderCell.title = monthName;
 
-            monthHeaderCell.appendChild(monthBackButton);
-            monthHeaderCell.appendChild(document.createTextNode(monthName));
-            monthHeaderCell.appendChild(monthForwardButton);
+            const flexDiv = document.createElement('div');
+            flexDiv.classList.add("month-flex-name-container");
+            const nameDiv = document.createElement('div');
+            nameDiv.innerText = monthName;
+            nameDiv.classList.add('name-div-control-bar');
+            nameDiv.id = `nameDiv${monthIndex}`;
+            monthHeaderCell.appendChild(flexDiv);
 
-            monthHeaderCell.colSpan = (+daysPerWeekInput.value); // No +1 here, since we have a separate header row
+            // Create Day Toggles
+            const dayBackButton = document.createElement('button');
+            dayBackButton.title = "Select Previous Day";
+            dayBackButton.classList.add("day-back-button");
+            dayBackButton.classList.add("clickable");
+            dayBackButton.style.background = "url(./day-back.svg) no-repeat center center";
+            dayBackButton.style.backgroundSize = 'contain';
+            dayBackButton.style.display = 'none';
+            dayBackButton.id = `dayBackButton${monthIndex}`;
+            dayBackButton.onclick = async () =>
+            {
+                this.CONFIGDAYCURRENTINPUT.value = (+this.CONFIGDAYCURRENTINPUT.value - 1).toString();
+                await this.SetCurrentDate();
+            };
+            const dayForwardButton = document.createElement('button');
+            dayForwardButton.title = "Select Next Day";
+            dayForwardButton.classList.add("day-forward-button");
+            dayForwardButton.classList.add("clickable");
+            dayForwardButton.style.background = "url(./day-forward.svg) no-repeat center center";
+            dayForwardButton.style.backgroundSize = 'contain';
+            dayForwardButton.style.display = 'none';
+            dayForwardButton.id = `dayForwardButton${monthIndex}`;
+            dayForwardButton.onclick = async () =>
+            {
+                this.CONFIGDAYCURRENTINPUT.value = (+this.CONFIGDAYCURRENTINPUT.value + 1).toString();
+                await this.SetCurrentDate();
+            };
+
+            nameDiv.classList.add("month-name-flex");
+            if (monthIndex === parseInt(this.CONFIGMONTHINPUT.value) - 1)
+            {
+                dayBackButton.style.display = "block";
+                dayForwardButton.style.display = "block";
+                nameDiv.classList.add("current-month-name-flex");
+            }
+
+            flexDiv.appendChild(monthBackButton);
+            flexDiv.appendChild(dayBackButton);
+            flexDiv.appendChild(nameDiv);
+            flexDiv.appendChild(dayForwardButton);
+            flexDiv.appendChild(monthForwardButton);
+
+            /////////////////
+
+            monthHeaderCell.colSpan = (+this.CONFIGDAYSPERWEEKINPUT.value); // No +1 here, since we have a separate header row
 
             // Add day headers
-            const dayHeaderRow = monthTable.insertRow();
+            const dayHeaderRow = monthTableHead.insertRow();
             for (const dayName of dayNames)
             {
                 const dayHeaderCell = dayHeaderRow.insertCell();
                 dayHeaderCell.textContent = dayName;
+                dayHeaderCell.title = dayName;
                 dayHeaderCell.classList.add("day-header");
             }
 
@@ -479,8 +483,8 @@ OBR.onReady(async () =>
                 if (newMonth)
                 {
                     // Start a new row for the first day of the week
-                    monthTable.insertRow();
-                    const firstDaysRow = monthTable.rows[monthTable.rows.length - 1];
+                    monthTableBody.insertRow();
+                    const firstDaysRow = monthTableBody.rows[monthTableBody.rows.length - 1];
 
                     for (let index = 1; index < currentWeekday; index++)
                     {
@@ -493,10 +497,10 @@ OBR.onReady(async () =>
                     if (currentWeekday === 1)
                     {
                         // Start a new row for the first day of the week
-                        monthTable.insertRow();
+                        monthTableBody.insertRow();
                     }
                 }
-                const dayRow = monthTable.rows[monthTable.rows.length - 1];
+                const dayRow = monthTableBody.rows[monthTableBody.rows.length - 1];
                 const dayCell = dayRow.insertCell();
                 dayCell.textContent = `${day}`;
                 dayCell.setAttribute('data-month', (monthIndex + 1).toString());
@@ -507,7 +511,7 @@ OBR.onReady(async () =>
                 currentWeekday++;
 
                 // If we reached the last weekday, reset the counter for a new week
-                if (currentWeekday > (+daysPerWeekInput.value))
+                if (currentWeekday > (+this.CONFIGDAYSPERWEEKINPUT.value))
                 {
                     currentWeekday = 1;
                 }
@@ -520,54 +524,56 @@ OBR.onReady(async () =>
         }
 
         // Display the generated calendar container
-        calendarOutputContainer.innerHTML = '';
-        calendarOutputContainer.appendChild(calendarContainer);
-        viewingMonth = (+currentMonthInput.value);
-        await setCurrentDate();
+        this.CALENDARCONTAINER.innerHTML = '';
+        this.CALENDARCONTAINER.appendChild(calendarContainer);
+        this.viewingMonth = (+this.CONFIGMONTHINPUT.value);
+        await this.SetCurrentDate();
     }
 
-    function CreateSaveFile()
+    public CreateSaveFile()
     {
         // Get days data
         const days = [];
-        for (let i = 1; i <= (+daysPerWeekInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGDAYSPERWEEKINPUT.value); i++)
         {
-            const dayName = GetSpecialValue("day", i, "Name");
+            const dayName = this.GetSpecialValue("day", i, "Name");
             days.push(dayName);
         }
 
         // Get month data
         const months: Month[] = [];
-        for (let i = 1; i <= (+numMonthsInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGMONTHSNUMINPUT.value); i++)
         {
-            const monthName = GetSpecialValue("month", i, "Name");
-            const monthDay = GetSpecialValue("month", i, "Days");
+            const monthName = this.GetSpecialValue("month", i, "Name");
+            const monthDay = this.GetSpecialValue("month", i, "Days");
             months.push({ Name: monthName, Days: monthDay });
         }
 
         // Get moon data
         const moons: Moon[] = [];
-        for (let i = 1; i <= (+moonNumberInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGMOONSNUMINPUT.value); i++)
         {
-            const moonName = GetSpecialValue("moon", i, "Name");
-            const moonCycle = GetSpecialValue("moon", i, "Cycle");
-            const moonShift = GetSpecialValue("moon", i, "Shift");
+            const moonName = this.GetSpecialValue("moon", i, "Name");
+            const moonCycle = this.GetSpecialValue("moon", i, "Cycle");
+            const moonShift = this.GetSpecialValue("moon", i, "Shift");
+            const moonColor = this.GetSpecialValue("moon", i, "Color");
             moons.push({
                 Name: moonName,
                 Cycle: moonCycle,
                 Shift: moonShift,
+                Color: moonColor
             });
         }
 
         // Package up for Saving
         const saveData: SaveFile = {
-            NameYear: calendarNameInput.value,
-            CurrentDay: currentDayInput.value,
-            StartDayYear: (parseInt(startDayYearInput.value) - 1).toString(),
-            CurrentMonth: currentMonthInput.value,
-            NumberMonth: numMonthsInput.value,
-            DaysPerWeek: daysPerWeekInput.value,
-            NumberMoons: moonNumberInput.value,
+            NameYear: this.CONFIGNAMEINPUT.value,
+            CurrentDay: this.CONFIGDAYCURRENTINPUT.value,
+            StartDayYear: (parseInt(this.CONFIGDAYSYEARSTARTINPUT.value) - 1).toString(),
+            CurrentMonth: this.CONFIGMONTHINPUT.value,
+            NumberMonth: this.CONFIGMONTHSNUMINPUT.value,
+            DaysPerWeek: this.CONFIGDAYSPERWEEKINPUT.value,
+            NumberMoons: this.CONFIGMOONSNUMINPUT.value,
             MoonSet: moons,
             MonthSet: months,
             DaySet: days
@@ -575,15 +581,19 @@ OBR.onReady(async () =>
         return saveData;
     }
 
-    function changeVisibleMonth(showTrueDate = false)
+    public ChangeVisibleMonth(showTrueDate = false)
     {
         // Find all elements with the class 'calendar-system'
         const calendarElements = document.querySelectorAll<HTMLTableElement>('.calendar-system');
 
-        let monthValue = viewingMonth !== (+currentMonthInput.value) ? viewingMonth : (+currentMonthInput.value);
+        let monthValue = this.viewingMonth !== (+this.CONFIGMONTHINPUT.value) ? this.viewingMonth : (+this.CONFIGMONTHINPUT.value);
 
-        if (showTrueDate) monthValue = (+currentMonthInput.value);
-        let forward = shownMonth < monthValue;
+        if (showTrueDate)
+        {
+            monthValue = (+this.CONFIGMONTHINPUT.value);
+            this.viewingMonth = monthValue;
+        }
+        let forward = this.shownMonth < monthValue;
 
         // Loop through each element
         for (const calendarElement of calendarElements)
@@ -594,7 +604,7 @@ OBR.onReady(async () =>
                 // Display the element with id 'testers1' with a slide-in effect from the right
                 setTimeout(() =>
                 {
-                    shownMonth = monthValue;
+                    this.shownMonth = monthValue;
                     calendarElement.style.display = 'table';
                     calendarElement.style.transform = forward ? 'translateX(100%)' : 'translateX(-100%)';
                     calendarElement.offsetHeight; // Trigger reflow to ensure transition is applied
@@ -615,99 +625,148 @@ OBR.onReady(async () =>
         }
     }
 
-    async function setCurrentDate()
+    public async SetCurrentDate()
     {
-        const daysInMonthMax = GetSpecialValue("month", +currentMonthInput.value, "Days");
+        const daysInMonthMax = this.GetSpecialValue("month", +this.CONFIGMONTHINPUT.value, "Days");
 
-        if ((+currentDayInput.value) > (+daysInMonthMax))
+        if ((+this.CONFIGDAYCURRENTINPUT.value) > (+daysInMonthMax))
         {
-            let newMonthInput = (+currentMonthInput.value + 1);
-            if (newMonthInput > (+numMonthsInput.value))
+            let newMonthInput = (+this.CONFIGMONTHINPUT.value + 1);
+            if (newMonthInput > (+this.CONFIGMONTHSNUMINPUT.value))
             {
-                currentDayInput.value = "1";
-                currentMonthInput.value = "1";
+                this.CONFIGDAYCURRENTINPUT.value = "1";
+                this.CONFIGMONTHINPUT.value = "1";
             }
             else
             {
-                currentMonthInput.value = newMonthInput.toString();
-                currentDayInput.value = "1";
+                this.CONFIGMONTHINPUT.value = newMonthInput.toString();
+                this.CONFIGDAYCURRENTINPUT.value = "1";
             }
         }
-        else if ((+currentDayInput.value) < 1)
+        else if ((+this.CONFIGDAYCURRENTINPUT.value) < 1)
         {
-            let newMonthInput = (+currentMonthInput.value - 1);
+            let newMonthInput = (+this.CONFIGMONTHINPUT.value - 1);
             if (newMonthInput < 1)
             {
-                const previousDaysInMonthMax = GetSpecialValue("month", +numMonthsInput.value - 1, "Days");
-                currentDayInput.value = previousDaysInMonthMax;
-                currentMonthInput.value = numMonthsInput.value;
+                const previousDaysInMonthMax = this.GetSpecialValue("month", +this.CONFIGMONTHSNUMINPUT.value - 1, "Days");
+                this.CONFIGDAYCURRENTINPUT.value = previousDaysInMonthMax;
+                this.CONFIGMONTHINPUT.value = this.CONFIGMONTHSNUMINPUT.value;
             }
             else
             {
-                const previousDaysInMonthMax = GetSpecialValue("month", newMonthInput, "Days");
-                currentMonthInput.value = (+currentMonthInput.value - 1).toString();
-                currentDayInput.value = previousDaysInMonthMax;
+                const previousDaysInMonthMax = this.GetSpecialValue("month", newMonthInput, "Days");
+                this.CONFIGMONTHINPUT.value = (+this.CONFIGMONTHINPUT.value - 1).toString();
+                this.CONFIGDAYCURRENTINPUT.value = previousDaysInMonthMax;
             }
         }
-
-
 
         // Remove the current date style from all cells
         const allCells = document.querySelectorAll('.calendar-system td');
         allCells.forEach(cell => cell.classList.remove('current-date'));
 
         // Add the current date style to the specified cell
-        const currentDateCell = document.querySelector(`.calendar-system td[data-month="${currentMonthInput.value}"][data-day="${currentDayInput.value}"]`);
+        const currentDateCell = document.querySelector(`.calendar-system td[data-month="${this.CONFIGMONTHINPUT.value}"][data-day="${this.CONFIGDAYCURRENTINPUT.value}"]`);
         if (currentDateCell)
         {
             currentDateCell.classList.add('current-date');
         }
-        changeVisibleMonth(true);
+        this.ChangeVisibleMonth(true);
 
         // Get moon data
         const moons = [];
-        for (let i = 1; i <= (+moonNumberInput.value); i++)
+        for (let i = 1; i <= (+this.CONFIGMOONSNUMINPUT.value); i++)
         {
-            const moonName = GetSpecialValue("moon", i, "Name");
-            const moonCycle = GetSpecialValue("moon", i, "Cycle");
-            const moonShift = GetSpecialValue("moon", i, "Shift");
+            const moonName = this.GetSpecialValue("moon", i, "Name");
+            const moonCycle = this.GetSpecialValue("moon", i, "Cycle");
+            const moonShift = this.GetSpecialValue("moon", i, "Shift");
+            const moonColor = this.GetSpecialValue("moon", i, "Color");
             moons.push({
                 name: moonName,
                 cycle: moonCycle,
                 shift: moonShift,
+                color: moonColor
             });
         }
 
         // Add moon phases for that day
-        moonContainer.innerHTML = "";
+        this.MOONCONTAINER.innerHTML = "";
         for (const moon of moons)
         {
-            const moonPhase = getMoonPhase(+currentDayInput.value, (+moon.cycle), (+moon.shift), moon.name);
-            moonContainer.appendChild(moonPhase);
+            const moonPhase = this.GetMoonPhase(+this.CONFIGDAYCURRENTINPUT.value, (+moon.cycle), (+moon.shift), moon.name, moon.color);
+            this.MOONCONTAINER.appendChild(moonPhase);
         }
 
-        if (userRole === "GM")
+        if (BSCACHE.playerRole === "GM")
         {
-            const saveData = CreateSaveFile();
-            await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/saveData`]: saveData });
-            const monthName = saveData?.MonthSet[+saveData.CurrentMonth - 1]?.Name;
-            savedDateActionText = `${monthName ?? saveData?.CurrentMonth}:${saveData?.CurrentDay}`;
-            if (!disableBadgeText) await OBR.action.setBadgeText(savedDateActionText);
+            this.UpdateDayControls();
+            this.debouncedSaveData();
         }
     }
 
-    function getMoonPhase(dayNumber: number, cycle: number, shift: number, name: string)
+    private async SaveData()
     {
-        console.log("hit");
+        const saveData = CALENDAR.CreateSaveFile();
+        await OBR.room.setMetadata({ [`${Constants.EXTENSIONID}/saveData`]: saveData });
+        const monthName = saveData?.MonthSet[+saveData.CurrentMonth - 1]?.Name;
+        BSCACHE.savedDateActionText = `${monthName ?? saveData?.CurrentMonth}:${saveData?.CurrentDay}`;
+        if (!BSCACHE.disableBadgeText) await OBR.action.setBadgeText(BSCACHE.savedDateActionText);
+    }
+
+    private UpdateDayControls()
+    {
+        const nameDivFlexContainers = document.querySelectorAll<HTMLDivElement>('.name-div-control-bar');
+        for (const nameDiv of nameDivFlexContainers)
+        {
+            if (nameDiv.classList.contains('current-month-name-flex'))
+            {
+                nameDiv.classList.remove('current-month-name-flex');
+                nameDiv.classList.add('month-name-flex');
+            }
+            if (nameDiv.id === `nameDiv${parseInt(this.CONFIGMONTHINPUT.value) - 1}`)
+            {
+                nameDiv.classList.add('current-month-name-flex');
+                nameDiv.classList.remove('month-name-flex');
+            }
+        }
+
+        const dayForwardButtons = document.querySelectorAll<HTMLButtonElement>('.day-forward-button');
+        for (const button of dayForwardButtons)
+        {
+            if (button.id === `dayForwardButton${parseInt(this.CONFIGMONTHINPUT.value) - 1}`)
+            {
+                button.style.display = 'block';
+            }
+            else
+            {
+                button.style.display = 'none';
+            }
+        }
+
+        const dayBackdButtons = document.querySelectorAll<HTMLButtonElement>('.day-back-button');
+        for (const button of dayBackdButtons)
+        {
+            if (button.id === `dayBackButton${parseInt(this.CONFIGMONTHINPUT.value) - 1}`)
+            {
+                button.style.display = 'block';
+            }
+            else
+            {
+                button.style.display = 'none';
+            }
+        }
+    }
+
+    public GetMoonPhase(dayNumber: number, cycle: number, shift: number, name: string, color: string)
+    {
         // Get month data
         let daysPast = dayNumber;
-        const monthNumber = parseInt(currentMonthInput.value);
+        const monthNumber = parseInt(this.CONFIGMONTHINPUT.value);
         for (let i = 1; i < monthNumber; i++)
         {
-            const daysInThisMonth = GetSpecialValue("month", i, "Days");
+            const daysInThisMonth = this.GetSpecialValue("month", i, "Days");
             daysPast += parseInt(daysInThisMonth);
         }
-        
+
         const totalDays = daysPast + shift - 1; // Adjusted for 1-based indexing
         const fractionalPhase = (totalDays % cycle) / cycle; // Fractional part of the cycle
 
@@ -758,7 +817,7 @@ OBR.onReady(async () =>
             phaseCheck = "15";
         }
 
-        let moonColor = Utilities.stringToColor(name);
+        let moonColor = color ? color : Utilities.stringToColor(name);
         switch (name)
         {
             case "Katamba":
@@ -774,17 +833,19 @@ OBR.onReady(async () =>
                 break;
         }
         const entireContainer = document.createElement('div');
+        entireContainer.classList.add('moon-container');
 
         const tintContainer = document.createElement('section');
         tintContainer.classList.add('moon-icon');
         tintContainer.style.setProperty('--moon-color', moonColor);
+        tintContainer.title = name;
 
         const labelName = document.createElement('label');
         labelName.textContent = name;
         labelName.classList.add("moon-name-label");
 
         const labelDC = document.createElement('label');
-        labelDC.textContent = `Spell DC: ${(+phaseCheck) + spellDCValue}`;
+        labelDC.textContent = `Spell DC: ${(+phaseCheck) + this.spellDCValue}`;
         labelDC.setAttribute('data-dc', phaseCheck);
         labelDC.classList.add("moon-dc-label");
 
@@ -803,38 +864,35 @@ OBR.onReady(async () =>
         entireContainer.appendChild(labelName);
         if (name === "Xibar" || name === "Katamba" || name === "Yavash")
         {
-            entireContainer.appendChild(document.createElement('br'));
             entireContainer.appendChild(labelDC);
-            spellContainer.style.display = "block";
-            profContainer.style.display = "block";
+            this.SPELLDCINPUT.style.display = "flex";
+            this.SPELLPROFINPUT.style.display = "flex";
         }
         return entireContainer;
     }
 
-    // Don Jon Importer
-    async function importCalendarData(saveFile?: SaveFile)
+    public async ImportCalendarData(saveFile?: SaveFile)
     {
-        const donjonJson = (document.getElementById('donjonJson') as HTMLTextAreaElement).value;
         let donjonData;
         try
         {
             if (saveFile)
             {
-                donjonData = translateSaveFileToDonJonData(saveFile);
-                currentMonthInput.value = saveFile.CurrentMonth;
-                currentDayInput.value = saveFile.CurrentDay;
+                donjonData = this.TranslateSaveFileToDonJonData(saveFile);
+                this.CONFIGMONTHINPUT.value = saveFile.CurrentMonth;
+                this.CONFIGDAYCURRENTINPUT.value = saveFile.CurrentDay;
             }
             else
             {
-                donjonData = JSON.parse(donjonJson);
+                donjonData = JSON.parse(this.IMPORTTEXTINPUT.value);
             }
 
             // Set the calendar name
-            calendarNameInput.value = donjonData.year ? donjonData.year : "Default Calendar Name";
+            this.CONFIGNAMEINPUT.value = donjonData.year ? donjonData.year : "Default Calendar Name";
 
             // Set the number of months and update the month inputs
-            numMonthsInput.value = donjonData.n_months ? donjonData.n_months : "12";
-            updateMonthInputs();
+            this.CONFIGMONTHSNUMINPUT.value = donjonData.n_months ? donjonData.n_months : "12";
+            this.AddMonthInputs();
 
             // Set the month names and days
             for (let i = 1; i <= donjonData.n_months; i++)
@@ -844,8 +902,8 @@ OBR.onReady(async () =>
             }
 
             // Set the number of days per week and update the day inputs
-            (document.getElementById('daysPerWeek') as HTMLInputElement).value = donjonData.weekdays.length > 0 ? donjonData.weekdays.length : "7";
-            updateDayInputs();
+            this.CONFIGDAYSPERWEEKINPUT.value = donjonData.weekdays.length > 0 ? donjonData.weekdays.length : "7";
+            this.AddDayInputs();
 
             // Set the day names
             for (let i = 1; i <= donjonData.weekdays.length; i++)
@@ -854,8 +912,8 @@ OBR.onReady(async () =>
             }
 
             // Set the number of moons and add moon inputs
-            (document.getElementById('numMoons') as HTMLInputElement).value = donjonData.n_moons ? donjonData.n_moons : "2";
-            addMoonInput();
+            this.CONFIGMOONSNUMINPUT.value = donjonData.n_moons ? donjonData.n_moons : "2";
+            this.AddMoonInput();
 
             // Set the moon names, cycles, and shifts
             for (let i = 1; i <= donjonData.n_moons; i++)
@@ -863,23 +921,29 @@ OBR.onReady(async () =>
                 (document.getElementById(`moon${i}Name`) as HTMLInputElement).value = donjonData.moons[i - 1] ? donjonData.moons[i - 1] : `DefaultMoon#${i}`;
                 (document.getElementById(`moon${i}Cycle`) as HTMLInputElement).value = donjonData.lunar_cyc[donjonData.moons[i - 1]] ? donjonData.lunar_cyc[donjonData.moons[i - 1]] : `28`;
                 (document.getElementById(`moon${i}Shift`) as HTMLInputElement).value = donjonData.lunar_shf[donjonData.moons[i - 1]] ? donjonData.lunar_shf[donjonData.moons[i - 1]] : `0`;
+
+                const colorCheck = donjonData.lunar_col;
+                if (colorCheck)
+                {
+                    (document.getElementById(`moon${i}Color`) as HTMLInputElement).value = donjonData.lunar_col[donjonData.moons[i - 1]] ? donjonData.lunar_col[donjonData.moons[i - 1]] : `#000000`;
+                }
             }
 
             // Set the total days in the year
-            (document.getElementById('totalDaysInYear') as HTMLInputElement).value = donjonData.year_len ? donjonData.year_len : "336";
+            this.CONFIGDAYSINYEARINPUT.value = donjonData.year_len ? donjonData.year_len : "336";
 
             // Set the starting day of the year (DonJonData Starts at 0)
-            startDayYearInput.value = donjonData.first_day ? (parseInt(donjonData.first_day) + 1).toString() : "1";
+            this.CONFIGDAYSYEARSTARTINPUT.value = donjonData.first_day ? (parseInt(donjonData.first_day) + 1).toString() : "1";
 
-            await generateCalendar();
+            await this.GenerateCalendar();
             const monthName = saveFile?.MonthSet[+saveFile.CurrentMonth - 1]?.Name;
-            
-            savedDateActionText = `${monthName ?? saveFile?.CurrentMonth}:${saveFile?.CurrentDay}`;
-            if (!disableBadgeText) await OBR.action.setBadgeText(savedDateActionText);
+
+            BSCACHE.savedDateActionText = `${monthName ?? saveFile?.CurrentMonth}:${saveFile?.CurrentDay}`;
+            if (!BSCACHE.disableBadgeText) await OBR.action.setBadgeText(BSCACHE.savedDateActionText);
 
             if (!saveFile)
             {
-                calendarSelectButton.click();
+                this.MAINBUTTON.click();
                 await OBR.notification.show("Calendar Imported Successfully!", "SUCCESS");
             }
         } catch (error)
@@ -889,7 +953,7 @@ OBR.onReady(async () =>
         }
     }
 
-    function translateSaveFileToDonJonData(saveFile: SaveFile): any
+    public TranslateSaveFileToDonJonData(saveFile: SaveFile): any
     {
         const donjonData: any = {};
 
@@ -924,11 +988,13 @@ OBR.onReady(async () =>
         donjonData.moons = [];
         donjonData.lunar_cyc = {};
         donjonData.lunar_shf = {};
+        donjonData.lunar_col = {};
         saveFile.MoonSet.forEach((moon, index) =>
         {
             donjonData.moons[index] = moon.Name || `DefaultMoon#${index + 1}`;
             donjonData.lunar_cyc[donjonData.moons[index]] = moon.Cycle || "28";
             donjonData.lunar_shf[donjonData.moons[index]] = moon.Shift || "0";
+            donjonData.lunar_col[donjonData.moons[index]] = moon.Color || "#000000";
         });
 
         // Set the total days in the year
@@ -937,4 +1003,6 @@ OBR.onReady(async () =>
 
         return donjonData;
     }
-});
+}
+
+export const CALENDAR = new CalendarMain();
