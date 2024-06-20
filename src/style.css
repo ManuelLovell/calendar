@@ -300,7 +300,7 @@ table {
 .month-header-cell {
     cursor: default;
     padding: 5px;
-    background-color: var(--OBR-Purple-Select);
+    background-color: var(--OBR-Purple-Select-transparent);
 }
 
 .lunar-magic-label {}
