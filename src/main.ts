@@ -34,6 +34,7 @@ OBR.onReady(async () =>
 
 class CalendarMain
 {
+    TABCONTROLS = document.getElementById('tabControls') as HTMLDivElement;
     MAINPANEL = document.getElementById('calendarPanel') as HTMLDivElement;
     MAINBUTTON = document.getElementById('calendarButton') as HTMLButtonElement;
     MOONCONTAINER = document.getElementById('calendarMoonContainer') as HTMLDivElement;
@@ -86,6 +87,11 @@ class CalendarMain
 
     public async InitializeCalendar()
     {
+        if (BSCACHE.playerRole === "PLAYER")
+        {
+            this.TABCONTROLS.style.display = "none";
+            this.MAINPANEL.style.height = "100%";
+        }
         await this.SetupCalendar();
     }
 
@@ -449,7 +455,7 @@ class CalendarMain
             };
 
             nameDiv.classList.add("month-name-flex");
-            if (monthIndex === parseInt(this.CONFIGMONTHINPUT.value) - 1)
+            if (BSCACHE.playerRole === "GM" && monthIndex === parseInt(this.CONFIGMONTHINPUT.value) - 1)
             {
                 dayBackButton.style.display = "block";
                 dayForwardButton.style.display = "block";
