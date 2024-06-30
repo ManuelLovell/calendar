@@ -13,23 +13,7 @@ async function BeginCalendar()
 
 OBR.onReady(async () =>
 {
-    const sceneReady = await OBR.scene.isReady();
-
-    if (sceneReady === false)
-    {
-        const startup = OBR.scene.onReadyChange(async (ready) =>
-        {
-            if (ready)
-            {
-                startup(); // Kill startup Handler
-                await BeginCalendar();
-            }
-        });
-    }
-    else
-    {
-        await BeginCalendar();
-    }
+    await BeginCalendar();
 });
 
 class CalendarMain

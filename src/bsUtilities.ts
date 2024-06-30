@@ -206,6 +206,27 @@ export function HexToRgba(hex: string, alpha: number): string
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+export function IsThisOld(messageCounter, timeStamp: string, processId: string): boolean
+{
+    const processCategory = `${processId}_OUTSIDE`;
+    const logKey = messageCounter[processCategory];
+    if (logKey)
+    {
+        if (logKey !== timeStamp)
+        {
+            messageCounter[processCategory] = timeStamp;
+            return false;
+        }
+        else
+            return true;
+    }
+    else
+    {
+        messageCounter[processCategory] = timeStamp;
+        return false;
+    }
+}
+
 export function Debounce<T extends (...args: any[]) => void>(
     func: T,
     delay: number

@@ -7,6 +7,9 @@ const footer = document.querySelector<HTMLElement>('#bs-whatsnew-notes')!;
 
 whatsnew.innerHTML = `
   <div id="newsContainer">
+    <h1>Calendar! 6/30</h1>
+    </br> Minor fix.  Wasn't loading correctly when there wasn't a scene.
+    </br> Because I explicitly put a check that told it not to.  Why? Idk. Whatever it's fixed.
     <h1>Calendar! 6/20</h1>
     Hello again, finally made my way back here.
     </br> I've slimmed down the foot print on this one as promised, as well as cleaned up several bugs and stylings issues.

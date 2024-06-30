@@ -1,6 +1,7 @@
 import OBR, { Grid, isImage, Item, Metadata, Player, Theme } from "@owlbear-rodeo/sdk";
 import * as Utilities from './bsUtilities';
 import { Constants } from "./bsConstants";
+import { CALENDAR } from './main';
 
 class BSCache
 {
@@ -358,15 +359,15 @@ class BSCache
             this.disableBadgeText = metadata[`${Constants.EXTENSIONID}/bdOff${this.playerId}`] as boolean;
             this.savedData = metadata[`${Constants.EXTENSIONID}/saveData`] as SaveFile;
 
-            //         const outside = metadata[`${Constants.OUTSIDEID}/data`] as OutsideInput;
-            //         if (outside)
-            //         {
-            //             if (!Utilities.IsThisOld(outside.Timestamp, "Outside", "CALENDAR"))
-            //             {
-            //                 currentDayInput.value = ((+currentDayInput.value) + (+outside.Increment)).toString();
-            //                 await setCurrentDate();
-            //             }
-            //         }
+                    const outside = metadata[`${Constants.OUTSIDEID}/data`] as OutsideInput;
+                    if (outside)
+                    {
+                        if (!Utilities.IsThisOld(outside.Timestamp, "Outside", "CALENDAR"))
+                        {
+                            CALENDAR.CONFIGDAYCURRENTINPUT.value = ((+CALENDAR.CONFIGDAYCURRENTINPUT.value) + (+outside.Increment)).toString();
+                            await CALENDAR.SetCurrentDate();
+                        }
+                    }
     }
 
     public async OnThemeChange(theme: Theme)
